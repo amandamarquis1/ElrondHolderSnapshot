@@ -19,17 +19,48 @@
   /* Parse JSON data. */
   $json = json_decode($output);
 
-  $count = count($json);
-  $addr = array();
+  $holders = array();
+  $marketplaces = array();
   
   foreach($json as $res) {
-    if (isset($addr[$res->address]['count']))
-      $addr[$res->address]['count'] += 1;
+    $address = $res->address;
+    if (str_contains($address, 'erd1qqq')) {
+      if (isset($marketplaces[$address]['count']))
+        $marketplaces[$address]['count'] += 1;
+      else {
+        $marketplaces[$address]['count'] = 1;
+		  }
+    }
     else {
-      $addr[$res->address]['count'] = 1;
-		}
+      if (isset($holders[$address]['count']))
+        $holders[$address]['count'] += 1;
+      else {
+        $holders[$address]['count'] = 1;
+		  }
+    }
   }
-  arsort($addr);
-  file_put_contents('./snapshot-' . $project .'.json', json_encode($addr, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT));
-?>
+  arsort($holders);
+  arsort($marketplaces);
+  $count_holders = count($holders);
+  $count_marketplaces = count($marketplaces);
   
+  echo "there are " . $count_holders . " holder addresses holding " . $project . "<br>";
+  echo "there are " . $count_marketplaces . " marketplaces holding NFTs on sale for " . $project . "<br>";
+  
+  $all_addresses = array_merge($holders, $marketplaces);
+  $count = count($all_addresses);
+  
+  echo "there are " . $count . " addresses in total (holder and marketplace) holding " . $project . "<br>";
+  
+  $snapshot = fopen('./snapshot-' . $project .'.csv', 'w');
+  fputcsv($snapshot, array('Address', 'NFT Count'));
+  foreach ($all_addresses as $address => $count) {
+    fputcsv($snapshot, array($address, $count['count']));
+  }
+
+
+//TODO: Add array of marketplace SC's to add SC listing information to the csv
+
+//Currently: prints holders, marketplaces, and combined in the browser when ran
+// Now creates a CSV instead of a JSON file for more optimal viewing
+?>
